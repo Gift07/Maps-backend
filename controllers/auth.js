@@ -1,7 +1,9 @@
 const user = require('../models/user')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
+const role = require('../config/role')
 require('dotenv').config()
+
 
 // registering the user
 const signUp = async (req, res) => {
@@ -66,7 +68,7 @@ const signIn = async (req, res) => {
       
         // creating jwt token
         const accessToken = jwt.sign(
-          { _id: User._id,user_name:User.username,email:User.email,user_role:User.user_role },
+          { _id: User._id,user_name:User.username,email:User.email,user_role:User.userRole },
           process.env.ACCESS_TOKEN_SECRET,
           {
             expiresIn: "1d",
@@ -98,5 +100,42 @@ try {
   res.status(400).json(error)
 }
 }
+
+// updating the user setting him as photographer
+const setPhotographer = async (req, res) => {
+  console.log("finding user now")
+  const {id} = req.body
+
+  const account = await user.findOne(id);
+
+  if (account) {
+    account.userRole = role.STAFF
+    console.log(account.userRole)
+    // saving the user
+    const User = await user.findByIdAndUpdate({_id:id}, account, { new: true })
+    // creating jwt token
+    console.log(User)
+        // creating jwt token
+            // creating jwt token
+            const accessToken = jwt.sign(
+              { _id: User._id,user_name:User.username,email:User.email,user_role:User.userRole },
+              process.env.ACCESS_TOKEN_SECRET,
+              {
+                expiresIn: "1d",
+              }
+            );
+    // generating refresh token
+    const refreshToken = jwt.sign(
+      { _id: User._id,email:User.email },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: "10d" }
+    );
+    // passing token to the headers
+    res.status(200).json({ accessToken, refreshToken, message: "sign in successful" });
+  } else {
+    res.status(404);
+    throw new Error("User Not Found");
+  }
+}
   
-module.exports = { signIn, signUp,fetchUsers };
+module.exports = { signIn, signUp,fetchUsers,setPhotographer };

@@ -2,22 +2,22 @@ const mongoose = require('mongoose')
 
 const travelsSchema = mongoose.Schema({
     from: {
-        name: String,
-        lat: Number,
-        long:Number
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"location"
     },
-    to: {
-        name: String,
-        lat: Number,
-        long:Number
+    time:Number,
+    traveller: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user'
     },
+    ended: {type:Boolean, default:false},
     bike: {
         type: mongoose.Schema.Types.ObjectId,
         ref:"bicycle"
     },
     price: {
-        type: Number,
-        default: 0
+        type: String,
+        required: true
     }
 },
     {timestamps:true}

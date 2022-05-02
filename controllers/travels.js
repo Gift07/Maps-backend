@@ -9,7 +9,7 @@ const addTravel = async (req, res) => {
             price,
             bike
         })
-        await newTravel.save().populate('bike')
+        await newTravel.save().populate('bike').populate('from')
         res.status(201).json({
             message: "route added successful",
             data:newTravel
