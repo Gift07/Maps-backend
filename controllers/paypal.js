@@ -2,8 +2,7 @@ const paypal = require('paypal-rest-sdk');
 const travels = require('../models/travels')
 
 const payment = async (req, res) => {
-    const { Price, from,userId,time,bike } = req.body;
-    console.log(Price)
+    const { price, from,userId,time,bike } = req.body;
     const create_payment_json = {
         "intent": "sale",
         "payer": {
@@ -17,15 +16,15 @@ const payment = async (req, res) => {
             "item_list": {
                 "items": [{
                     "name": "travelroute",
-                    "sku": from,
-                    "price": Price,
+                    "sku": "sinza",
+                    "price": price,
                     "currency": "USD",
                     "quantity": 1
                 }]
             },
             "amount": {
                 "currency": "USD",
-                "total": Price
+                "total": price
             },
             "description": "This is the payment description."
         }]
@@ -41,24 +40,20 @@ const payment = async (req, res) => {
             //Redirect user to this endpoint for redirect url
                 if (payment.links[index].rel === 'approval_url') {
                     // res.redirect(payment.links[index].href);
-                    res.status(201).redirect(payment.links[index].href)
+                    res.status(201).json(payment.links[index].href + `/`)
                 }
             }
         }
     });
     try {
         const newTravel = new travels({
-            from,
+            from:"62603059ac49b39be4e0a9ae",
             traveller: userId,
             time,
-            price:Price,
+            price,
             bike
         })
-        await newTravel.save().populate('bike')
-        res.status(201).json({
-            message: "route added successful",
-            data:newTravel
-        })
+        await newTravel.save()
     } catch (error) {
         res.status(400).json({
             error:error.message
@@ -85,7 +80,7 @@ const succeed = async (req, res) => {
             throw error;
         } else {
             console.log("Get Payment Response");
-            res.redirect('https://bikesrenting.netlify.app/travels')
+            res.redirect('http://localhost:3000/travels/')
         }
     });
 }
