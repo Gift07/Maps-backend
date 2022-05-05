@@ -80,7 +80,7 @@ const succeed = async (req, res) => {
             throw error;
         } else {
             console.log("Get Payment Response");
-            res.redirect('https://bikesrenting.netlify.app/')
+            res.redirect('https://bikesrenting.netlify.app/travels/')
         }
     });
 }

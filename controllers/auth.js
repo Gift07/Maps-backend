@@ -55,10 +55,12 @@ const signUp = async (req, res) => {
     
 // login the user to get the access and refresh token
 const signIn = async (req, res) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
+  console.log(email)
     try {
         // checking username exist and fetching it
         const User = await user.findOne({ email });
+        console.log(User)
         if (!User) return res.status(400).json({message: "username or password is wrong"});
         console.log('here')
         // password checking
@@ -104,15 +106,15 @@ try {
 // updating the user setting him as photographer
 const setPhotographer = async (req, res) => {
   console.log("finding user now")
-  const {id} = req.body
-
-  const account = await user.findOne(id);
+  const { userId } = req.body
+  console.log(req.body)
+  const account = await user.findById(userId);
 
   if (account) {
     account.userRole = role.STAFF
     console.log(account.userRole)
     // saving the user
-    const User = await user.findByIdAndUpdate({_id:id}, account, { new: true })
+    const User = await user.findByIdAndUpdate(userId, account, { new: true })
     // creating jwt token
     console.log(User)
         // creating jwt token
