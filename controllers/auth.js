@@ -2,24 +2,21 @@ const user = require('../models/user')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 const role = require('../config/role')
+const nodemailer = require("nodemailer");
+const crypto = require('crypto')
 require('dotenv').config()
 
 
 // registering the user
 const signUp = async (req, res) => {
     // taking validated values from join
-    const { username, email, password } = req.body;
+    const { firstname,lastname,nationalId, email, password } = req.body;
     try {
       //checking if email already exist
         const emailExist = await user.findOne({ email });
         if (emailExist) return res.status(400).json({ message: "Email Already exist" });
       
         console.log('email exists')
-        // checking is user exist
-        const userExist = await user.findOne({ username });
-        if (userExist) return res.status(400).json({ message: "User Already exist" });
-      
-        console.log('user exists')
         //hashing the passwords
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
@@ -27,40 +24,75 @@ const signUp = async (req, res) => {
       
         console.log('password hashed', hashedPassword)
         const User = new user({
-          username: username,
-          email: email,
+          firstname,
+          lastname,
+          nationalId,
+          email,
+          emailToken:crypto.randomBytes(64).toString('hex'),
           password: hashedPassword,
           
         });
       await User.save();
-         // creating jwt token
-         const accessToken = jwt.sign(
-          { _id: User._id,user_name:User.username,email:User.email,user_role:User.userRole },
-          process.env.ACCESS_TOKEN_SECRET,
-          {
-            expiresIn: "1d",
-          }
-        );
-      
-        const refreshToken = jwt.sign(
-          { _id: User._id,email:User.email },
-          process.env.REFRESH_TOKEN_SECRET,
-          { expiresIn: "10d" }
-        );
-      res.status(200).json({User,accessToken,refreshToken, message:"sign up successfull" })
+      // create reusable transporter object using the default SMTP transport
+      let transporter = nodemailer.createTransport({
+        service: 'gmail', // true for 465, false for other ports
+        auth: {
+          user: "madegaramadhani@gmail.com", // generated ethereal user
+          pass: "0716574734", // generated ethereal password
+        },
+      });
+    
+      // send mail with defined transport object
+     await transporter.sendMail({
+        from: 'madegaramadhani@gmail.com', // sender address
+        to: User.email,
+        subject: 'bikes-rental system verify your email',
+        text: `
+        Hello ${User.firstname}, thanks for registering on our site
+        please verify your email by clicking the link below
+        http://${req.headers.host}/api/auth/verify-email?token=${User.emailToken}
+        `,
+        html: `
+        <h1>Hello ${User.firstname}</h1>
+        <p> thanks for registering on our site</p>
+        <p>please verify your email by clicking the link below</p>
+        <a href="http://${req.headers.host}/api/auth/verify-email?token=${User.emailToken}">verify your email</a>
+        `
+     })
+        .then((data) => console.log(data))
+        req.status(200).json({ message: 'thanks for registering, please check your email fro verification' })
     } catch (error) {
       res.status(400).json(error.message);
     }
 };
+// verifying the email address
+const verifyEmail = async (req, res) => {
+  const { token } = req.query
+  
+  try {
+    const User = await user.findOne({ emailToken: token })
+    if (!User) return res.status(400).json({ message: "User not found" })
+    
+    User.emailToken = null
+    User.is_verified = true
+    const VerifiedUser = await user.findByIdAndUpdate(User._id,User, { new: true })
+    // creating jwt token
+    // passing token to the headers
+    res.status(200).redirect(`https://bikesrenting.netlify.app/user/sign-in`)
+  } catch (error) {
+    res.status(400).json(error)
+  }
+}
     
 // login the user to get the access and refresh token
 const signIn = async (req, res) => {
   const { email, password } = req.body;
+  console.log({ email, password })
   console.log(email)
     try {
         // checking username exist and fetching it
         const User = await user.findOne({ email });
-        console.log(User)
+
         if (!User) return res.status(400).json({message: "username or password is wrong"});
         console.log('here')
         // password checking
@@ -70,22 +102,15 @@ const signIn = async (req, res) => {
       
         // creating jwt token
         const accessToken = jwt.sign(
-          { _id: User._id,user_name:User.username,email:User.email,user_role:User.userRole },
+          { _id: User._id,firstname:User.firstname,lastname:User.lastname,email:User.email,user_role:User.userRole },
           process.env.ACCESS_TOKEN_SECRET,
           {
-            expiresIn: "1d",
+            expiresIn: "10d",
           }
         );
         console.log("acces token made")
-        console.log(user.username)
-        const refreshToken = jwt.sign(
-          { _id: User._id,email:User.email },
-          process.env.REFRESH_TOKEN_SECRET,
-          { expiresIn: "10d" }
-        );
-      
         //   passing token to the headers
-        res.status(200).json({ accessToken, refreshToken ,message:"sign in successful"});
+        res.status(200).json({ accessToken,message:"sign in successful"});
       
     } catch (error) {
       res.status(400).json({
@@ -140,4 +165,4 @@ const setPhotographer = async (req, res) => {
   }
 }
   
-module.exports = { signIn, signUp,fetchUsers,setPhotographer };
+module.exports = { signIn, signUp,fetchUsers,setPhotographer,verifyEmail };

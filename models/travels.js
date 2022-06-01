@@ -5,7 +5,6 @@ const travelsSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref:"location"
     },
-    time:Number,
     traveller: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user'
@@ -16,8 +15,7 @@ const travelsSchema = mongoose.Schema({
         ref:"bicycle"
     },
     price: {
-        type: String,
-        required: true
+        type: Number,
     }
 },
     {timestamps:true}
