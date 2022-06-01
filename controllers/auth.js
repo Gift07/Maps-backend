@@ -32,7 +32,6 @@ const signUp = async (req, res) => {
           password: hashedPassword,
           
         });
-      await User.save();
       // create reusable transporter object using the default SMTP transport
       let transporter = nodemailer.createTransport({
         service: 'gmail', // true for 465, false for other ports
@@ -60,7 +59,8 @@ const signUp = async (req, res) => {
         `
      })
         .then((data) => console.log(data))
-        req.status(200).json({ message: 'thanks for registering, please check your email fro verification' })
+        await User.save();
+        res.status(200).json({ message: 'thanks for registering, please check your email fro verification' })
     } catch (error) {
       res.status(400).json(error.message);
     }
