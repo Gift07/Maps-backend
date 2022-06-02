@@ -58,9 +58,8 @@ const signUp = async (req, res) => {
         <a href="http://${req.headers.host}/api/auth/verify-email?token=${User.emailToken}">verify your email</a>
         `
      })
-        .then((data) => console.log(data))
-        await User.save();
-        res.status(200).json({ message: 'thanks for registering, please check your email fro verification' })
+      await User.save();
+      res.status(200).json({ message: 'thanks for registering, please check your email fro verification' })
     } catch (error) {
       res.status(400).json(error.message);
     }
